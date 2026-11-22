@@ -1,0 +1,6 @@
+{
+  "name": "Daily Vachan",
+  "description": "Single-user daily Bible voice notifications, offline devotional audio companion, Bolkar Samadhan mood-to-verse helper, and WhatsApp status card maker.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

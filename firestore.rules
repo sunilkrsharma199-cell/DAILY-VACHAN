@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidLanguage(code) {
+      return code in ['en', 'hi', 'hinglish', 'ta', 'te', 'mr'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
+             data.selectedLanguage is string && isValidLanguage(data.selectedLanguage) &&
+             data.morningEnabled is bool &&
+             data.eveningEnabled is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSavedVerse(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+             data.timeSlot is string && data.timeSlot in ['MORNING', 'EVENING', 'SAMADHAN'] &&
+             data.languageCode is string && isValidLanguage(data.languageCode) &&
+             data.verseReference is string && data.verseReference.size() >= 1 && data.verseReference.size() <= 120 &&
+             data.verseText is string && data.verseText.size() >= 1 && data.verseText.size() <= 1000 &&
+             data.reflection is string && data.reflection.size() >= 1 && data.reflection.size() <= 2500 &&
+             data.shortPrayer is string && data.shortPrayer.size() >= 1 && data.shortPrayer.size() <= 1000 &&
+             data.moodTag is string && data.moodTag.size() >= 1 && data.moodTag.size() <= 60 &&
+             data.bookmarked is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'selectedLanguage',
+                         'morningEnabled', 'eveningEnabled', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'email', 'phoneNumber',
+                         'selectedLanguage', 'morningEnabled', 'eveningEnabled',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'email', 'phoneNumber',
+                         'selectedLanguage', 'morningEnabled', 'eveningEnabled', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /saved_verses/{verseId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(verseId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(verseId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'dateKey', 'timeSlot', 'languageCode',
+                           'verseReference', 'verseText', 'reflection',
+                           'shortPrayer', 'moodTag', 'bookmarked', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'dateKey', 'timeSlot', 'languageCode',
+                           'verseReference', 'verseText', 'reflection',
+                           'shortPrayer', 'moodTag', 'bookmarked', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidSavedVerse(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(verseId) &&
+                         isValidSavedVerse(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'bookmarked', 'moodTag', 'reflection', 'shortPrayer', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(verseId);
+      }
+    }
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Single-user profile, optional mobile number, and notification preferences.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the signed-in user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name from Google profile or custom edit."
+        },
+        "email": {
+          "type": "string",
+          "description": "Google account email address."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Optional user mobile number saved on profile."
+        },
+        "selectedLanguage": {
+          "type": "string",
+          "description": "Preferred devotional language code."
+        },
+        "morningEnabled": {
+          "type": "boolean",
+          "description": "Whether morning voice reminder is enabled."
+        },
+        "eveningEnabled": {
+          "type": "boolean",
+          "description": "Whether evening voice reminder is enabled."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "selectedLanguage",
+        "morningEnabled",
+        "eveningEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SavedVerse": {
+      "title": "SavedVerse",
+      "description": "Bookmarked devotional or Bolkar Samadhan verse synced to the user's cloud library.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "dateKey": {
+          "type": "string",
+          "description": "ISO date key yyyy-MM-dd."
+        },
+        "timeSlot": {
+          "type": "string",
+          "enum": ["MORNING", "EVENING", "SAMADHAN"],
+          "description": "Devotional slot."
+        },
+        "languageCode": {
+          "type": "string",
+          "description": "Language code of the verse."
+        },
+        "verseReference": {
+          "type": "string",
+          "description": "Bible book, chapter, and verse reference."
+        },
+        "verseText": {
+          "type": "string",
+          "description": "Bible verse text."
+        },
+        "reflection": {
+          "type": "string",
+          "description": "Devotional reflection text."
+        },
+        "shortPrayer": {
+          "type": "string",
+          "description": "Closing short prayer."
+        },
+        "moodTag": {
+          "type": "string",
+          "description": "Emotion or devotional theme tag."
+        },
+        "bookmarked": {
+          "type": "boolean",
+          "description": "Whether the verse is starred as favorite."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "dateKey",
+        "timeSlot",
+        "languageCode",
+        "verseReference",
+        "verseText",
+        "reflection",
+        "shortPrayer",
+        "moodTag",
+        "bookmarked",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Owner-only user profile document storing PII and devotional preferences."
+    },
+    "/users/{userId}/saved_verses/{verseId}": {
+      "schema": {
+        "$ref": "#/entities/SavedVerse"
+      },
+      "description": "Owner-only synced saved verses and Bolkar Samadhan reflections."
+    }
+  }
+}
